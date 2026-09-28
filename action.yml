@@ -1,0 +1,114 @@
+name: "Stack Fingerprint"
+description: "Detect your repo's tech stack and commit an embeddable SVG card to your README."
+author: "mattqdev"
+
+branding:
+  icon: "layers"
+  color: "green"
+
+inputs:
+  layout:
+    description: "classic | compact | banner | tall | terminal | minimal | icons | sidebar | split | cards"
+    default: "classic"
+  theme:
+    description: "Colour theme, e.g. midnight | ocean | forest | ember | sakura | nord | dracula | signal"
+    default: "midnight"
+  icon-style:
+    description: "color | mono | none | icononly"
+    default: "color"
+  size:
+    description: "sm | md | lg | xl"
+    default: "md"
+  filter:
+    description: "all | top | core | devtools | infra | prodonly"
+    default: "all"
+  path:
+    description: "Sub-directory to scan (monorepo), e.g. apps/web"
+    default: ""
+  output:
+    description: "Where the SVG is saved inside the repo"
+    default: "assets/stack-fingerprint.svg"
+  commit:
+    description: "Commit and push the SVG if it changed (true | false)"
+    default: "true"
+  commit-message:
+    description: "Commit message used when the SVG changes"
+    default: "chore: update stack fingerprint badge [skip ci]"
+  api-url:
+    description: "Card API endpoint (point it at your own deployment to self-host)"
+    default: "https://stackfingerprint.vercel.app/api/card"
+
+outputs:
+  svg-path:
+    description: "Path of the generated SVG"
+    value: ${{ steps.fetch.outputs.svg-path }}
+  changed:
+    description: "true if the SVG differs from the committed version"
+    value: ${{ steps.commit.outputs.changed }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Fetch SVG
+      id: fetch
+      shell: bash
+      env:
+        REPO: ${{ github.repository }}
+        API_URL: ${{ inputs.api-url }}
+        LAYOUT: ${{ inputs.layout }}
+        THEME: ${{ inputs.theme }}
+        ICON_STYLE: ${{ inputs.icon-style }}
+        SIZE: ${{ inputs.size }}
+        FILTER: ${{ inputs.filter }}
+        SUB_PATH: ${{ inputs.path }}
+        OUTPUT: ${{ inputs.output }}
+      run: |
+        URL="${API_URL}?repo=${REPO}&layout=${LAYOUT}&theme=${THEME}&iconStyle=${ICON_STYLE}&size=${SIZE}&categoryFilter=${FILTER}"
+        if [ -n "$SUB_PATH" ]; then
+          URL="${URL}&path=${SUB_PATH}"
+        fi
+
+        mkdir -p "$(dirname "$OUTPUT")"
+        HTTP_CODE=$(curl -sS -w "%{http_code}" -o "$OUTPUT" "$URL")
+
+        if [ "$HTTP_CODE" -ne 200 ]; then
+          echo "::error::Stack Fingerprint API returned HTTP $HTTP_CODE ($URL)"
+          cat "$OUTPUT" || true
+          exit 1
+        fi
+
+        if ! grep -q "<svg" "$OUTPUT"; then
+          echo "::error::Response does not appear to be a valid SVG"
+          cat "$OUTPUT"
+          exit 1
+        fi
+
+        echo "✓ SVG generated ($(wc -c < "$OUTPUT") bytes) → $OUTPUT"
+        echo "svg-path=$OUTPUT" >> "$GITHUB_OUTPUT"
+
+    - name: Commit SVG
+      id: commit
+      shell: bash
+      env:
+        OUTPUT: ${{ inputs.output }}
+        COMMIT: ${{ inputs.commit }}
+        MESSAGE: ${{ inputs.commit-message }}
+      run: |
+        git add "$OUTPUT"
+        if git diff --cached --quiet; then
+          echo "SVG unchanged — nothing to commit."
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        echo "changed=true" >> "$GITHUB_OUTPUT"
+
+        if [ "$COMMIT" != "true" ]; then
+          echo "SVG changed — commit disabled, leaving it staged."
+          exit 0
+        fi
+
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git commit -m "$MESSAGE"
+        git push
+        echo "✓ Badge committed and pushed."
