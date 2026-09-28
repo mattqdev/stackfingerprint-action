@@ -45,7 +45,7 @@ Then add it to your README:
 | Input            | Default                                           | Description                                                                 |
 | ---------------- | ------------------------------------------------- | --------------------------------------------------------------------------- |
 | `layout`         | `classic`                                         | `classic` `compact` `banner` `tall` `terminal` `minimal` `icons` `sidebar` `split` `cards` |
-| `theme`          | `midnight`                                        | Any theme from the [builder](https://stackfingerprint.vercel.app)           |
+| `theme`          | `scanner`                                         | Any theme from the [builder](https://stackfingerprint.vercel.app)           |
 | `icon-style`     | `color`                                           | `color` `mono` `none` `icononly`                                            |
 | `size`           | `md`                                              | `sm` `md` `lg` `xl`                                                         |
 | `filter`         | `all`                                             | `all` `top` `core` `devtools` `infra` `prodonly`                            |
