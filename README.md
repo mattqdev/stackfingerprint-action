@@ -1,4 +1,8 @@
-# Stack Fingerprint Action
+<p align="center">
+  <img src=".github/assets/logo.png" alt="Stack Fingerprint" width="120" />
+</p>
+
+<h1 align="center">Stack Fingerprint Action</h1>
 
 Detect your repository's tech stack and commit an embeddable SVG card, generated on GitHub's own runners. Your README then serves a local file instead of hotlinking a third-party image.
 

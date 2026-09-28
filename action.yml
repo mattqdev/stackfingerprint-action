@@ -3,8 +3,8 @@ description: "Detect your repo's tech stack and commit an embeddable SVG card to
 author: "mattqdev"
 
 branding:
-  icon: "layers"
-  color: "green"
+  icon: "maximize"
+  color: "black"
 
 inputs:
   layout:
