@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: mattqdev/stackfingerprint-action@v1
         with:
-          theme: midnight
+          theme: scanner
           layout: classic
 ```
 
